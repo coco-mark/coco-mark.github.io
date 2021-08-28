@@ -4,11 +4,9 @@
   <meta charset="utf-8">
   
   <title>Apache Flink 大状态管理：增量 checkpointing 介绍 › 可可的荧光笔</title>
-  <meta name="author" content="coco">
+  <meta name="author" content="wangzhao">
   
-  <meta name="description" content="翻译自 Managing Large State in Apache Flink: An Intro to Incremental Checkpointing
-
-Apache Flink 专门为状态流（stateful stream）计算而搭建。那什么是流计算中的状态（state）？我在上一篇博客中">
+  <meta name="description" content="Apache Flink 专门为状态流（stateful stream）计算而搭建。那什么是流计算中的状态（state）？我在上一篇博客中定义了状态和状态流计算，简单回顾一下：状态是被定义在算子（operator）中的一块内存空间，通过存储过去事件中的信息来影响未来事件的处理。">
   
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -63,10 +61,9 @@ Apache Flink 专门为状态流（stateful stream）计算而搭建。那什么�
     </header>
     <div class="entry">
       
-        <blockquote>
-<p>翻译自 <a target="_blank" rel="noopener" href="https://flink.apache.org/features/2018/01/30/incremental-checkpointing.html">Managing Large State in Apache Flink: An Intro to Incremental Checkpointing</a></p>
-</blockquote>
-<p>Apache Flink 专门为<strong>状态流（stateful stream）</strong>计算而搭建。那什么是流计算中的<strong>状态（state）</strong>？我在<a target="_blank" rel="noopener" href="http://flink.apache.org/features/2017/07/04/flink-rescalable-state.html">上一篇博客</a>中定义了状态和状态流计算，简单回顾一下：状态是被定义在<strong>算子（operator）</strong>中的一块内存空间，通过存储过去事件中的信息来影响未来事件的处理。</p>
+        <p>Apache Flink 专门为<strong>状态流（stateful stream）</strong>计算而搭建。那什么是流计算中的<strong>状态（state）</strong>？我在<a target="_blank" rel="noopener" href="http://flink.apache.org/features/2017/07/04/flink-rescalable-state.html">上一篇博客</a>中定义了状态和状态流计算，简单回顾一下：状态是被定义在<strong>算子（operator）</strong>中的一块内存空间，通过存储过去事件中的信息来影响未来事件的处理。</p>
+<span id="more"></span>
+
 <p>在一些常见的复杂流计算场景中状态是一个基本且必要的概念。以下是<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.3/dev/stream/state.html">Flink 官方文档</a>中提到的几个经典场景：</p>
 <ul>
 <li><p>当需要在应用中寻找特定格式的事件时，需要依赖状态来存储输入的事件序列</p>
@@ -116,6 +113,10 @@ Apache Flink 专门为状态流（stateful stream）计算而搭建。那什么�
 <p>有些策略可以帮助你在简便性与性能之间找到更好的权衡点，推荐阅读<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.4/ops/state/checkpoints.html#basics-of-incremental-checkpoints">Flink 官方文档</a>了解更多的细节。</p>
 <p><em>这篇文章<a target="_blank" rel="noopener" href="https://data-artisans.com/blog/managing-large-state-apache-flink-incremental-checkpointing-overview">最初</a><a target="_blank" rel="noopener" href="https://data-artisans.com/blog/managing-large-state-apache-flink-incremental-checkpointing-overview">发表在 Data Artisans 博客</a>中，是由 Stefan Richter 和 Chris Ward 贡献的。</em></p>
 <img src="/img/wx_pub.png" width="400" />
+
+<p><em>翻译自 <a target="_blank" rel="noopener" href="https://flink.apache.org/features/2018/01/30/incremental-checkpointing.html">Managing Large State in Apache Flink: An Intro to Incremental Checkpointing</a></em></p>
+<p><em>译者：<a target="_blank" rel="noopener" href="https://coco-mark.github.io/">可可</a> @ <a href="mailto:cherry.picker2018@icloud.com.">欢迎邮件联系我</a></em></p>
+
       
     </div>
       
@@ -172,6 +173,10 @@ Apache Flink 专门为状态流（stateful stream）计算而搭建。那什么�
   <ul class="entry">
     
       <li>
+        <a href="/2021/08/28/Apache Flink：基于 Reactive Mode 的 Flink 自动扩容/">Apache Flink 大状态管理：增量 checkpointing 介绍</a>
+      </li>
+    
+      <li>
         <a href="/2021/08/21/Apache Flink 大状态管理：增量 checkpointing 介绍/">Apache Flink 大状态管理：增量 checkpointing 介绍</a>
       </li>
     
@@ -184,7 +189,7 @@ Apache Flink 专门为状态流（stateful stream）计算而搭建。那什么�
   <h3 class="title">分类</h3>
   <ul class="entry">
   
-    <li><a href="/categories/Flink/">Flink</a><small>1</small></li>
+    <li><a href="/categories/Flink/">Flink</a><small>2</small></li>
   
   </ul>
 </div>
@@ -196,7 +201,7 @@ Apache Flink 专门为状态流（stateful stream）计算而搭建。那什么�
   </div>
   <footer id="footer" class="inner"><div class="alignleft">
   
-  &copy; 2021 coco
+  &copy; 2021 wangzhao
   
 </div>
 <div class="clearfix"></div></footer>

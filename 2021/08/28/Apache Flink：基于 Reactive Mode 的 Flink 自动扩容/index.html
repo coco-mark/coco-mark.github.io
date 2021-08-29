@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Apache Flink 大状态管理：增量 checkpointing 介绍 › 可可的荧光笔</title>
+  <title>Apache Flink：基于 Reactive Mode 的 Flink 自动扩容 › 可可的荧光笔</title>
   <meta name="author" content="wangzhao">
   
   <meta name="description" content="简介流式作业长时间运行过程中常常会经历不同流量负载的情况。流量负载会出现周期性的变化，如：白天与晚上、周末与工作日、节假日与非节假日，这些波动可能是突发事件或是业务的自然增长。虽然这些波动有些是可预见的，但是如果想要在所有场景下保证相同的服务质量，那么就需要解决如何让作业资源随着需求的变化而动态调整。">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="Apache Flink 大状态管理：增量 checkpointing 介绍"/>
+  <meta property="og:title" content="Apache Flink：基于 Reactive Mode 的 Flink 自动扩容"/>
   <meta property="og:site_name" content="可可的荧光笔"/>
 
   
@@ -52,7 +52,7 @@
     <header>
       
   
-    <h1 class="title">Apache Flink 大状态管理：增量 checkpointing 介绍</h1>
+    <h1 class="title">Apache Flink：基于 Reactive Mode 的 Flink 自动扩容</h1>
   
 
       
@@ -65,7 +65,7 @@
 <span id="more"></span>
 
 <p>一个简单的衡量当前所需资源与可用资源是否匹配的方法是：计算当前负载与可用的 workers 数之间的面积。如下图所示，左图中分配了固定的资源量，可用看到：实际负载与可用的 workers 之间有很大的差距 —— 因此造成了资源的浪费。右图中展示了弹性资源分配的情况，红线与黑线之间的距离在负载的变化中不断的努力减小。</p>
-<p><img src="/img/intro.svg" alt="静态资源分配 vs 弹性资源分配">)</p>
+<p><img src="/img/intro.svg" alt="静态资源分配 vs 弹性资源分配"></p>
 <p>多亏了 Flink 1.2 引入的<a target="_blank" rel="noopener" href="https://flink.apache.org/features/2017/07/04/flink-rescalable-state.html">可扩展状态（rescalable state）</a>，我们可以<strong>手动</strong>对 Flink 作业扩/缩容，即可以通过调整并行度、重启任务的方式来调整资源。例如，如果你的 Flink Job 当前的并行度是 100，当负载升高时可以上调并行度到 200 并重启应用来应对负载的升高。</p>
 <p>这种方式的问题在于你需要手动的借助一些自研工具来进行资源的计算与评估，并重新部署来进行合理的扩/缩容，不仅如此，这其中还可能包括一些异常的处理，以及对其他有相似情况的任务做同样的工作。</p>
 <p>Flink 1.13 引入的<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-master/docs/deployment/elastic_scaling/">响应模式（reactive mode）</a>给你提供了另一种选择：这种模式下你只需要监控你的 Flink 集群，然后根据一些监控指标添加/移除相应的资源，剩下的事情 Flink 会帮你完成。响应式模式下 JobManager 会尝试引入所有可用的 TaskManager 资源用于当前的流数据处理。</p>
@@ -186,7 +186,7 @@
   <ul class="entry">
     
       <li>
-        <a href="/2021/08/28/Apache Flink：基于 Reactive Mode 的 Flink 自动扩容/">Apache Flink 大状态管理：增量 checkpointing 介绍</a>
+        <a href="/2021/08/28/Apache Flink：基于 Reactive Mode 的 Flink 自动扩容/">Apache Flink：基于 Reactive Mode 的 Flink 自动扩容</a>
       </li>
     
       <li>

@@ -264,7 +264,14 @@ article header time {
   color: #999;
   font: 0.8em "Lato", Helvetica Neue, Helvetica, Arial, sans-serif;
   margin-bottom: 5px;
-  display: block;
+  margin-right: 2px;
+  line-height: 2.5;
+}
+article header span {
+  color: #999;
+  font: 0.8em "Lato", Helvetica Neue, Helvetica, Arial, sans-serif;
+  margin-bottom: 5px;
+  margin-right: 2px;
   line-height: 2.5;
 }
 article header .title {

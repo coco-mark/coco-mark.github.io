@@ -38,6 +38,8 @@
       
       <li><a href="/archives">Archives</a></li>
       
+      <li><a href="/atom.xml">RSS</a></li>
+      
     </ul>
     <div class="clearfix"></div>
   </nav>
@@ -70,10 +72,24 @@
 <p>响应式模式的一个巨大优势在于你不再需要详细的去了解 Flink 扩容相关知识就可以达到适应性扩容的目的。基本上可以把 Flink 看做一个服务器集群（如同 web 服务器、缓存、批处理），你可以根据所需进行扩/缩容。当前自动扩容在业界已经有非常成熟的方案，众多基础设施都提供相应的支持：主流的云服务都提供相关的指标监控组件，并适应性进行资源调整。例如，AWS 基于 <a target="_blank" rel="noopener" href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html">Auto Scaling groups</a> 提供支持、Google Cloud 的 <a target="_blank" rel="noopener" href="https://cloud.google.com/compute/docs/instance-groups">Managed Instance groups</a>。相应的，Kubernetes 提供了 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/">Horizontal Pod Autoscalers</a>。</p>
 <p>不同于其他支持自动扩容“服务器集群”，Flink 是一个包含状态的系统，通常需要处理重要的数据并保证强一致性（类似于数据库）。但并不像传统数据库那样，Flink 可以弹性的调整资源（基于 checkpoint 和状态后端）来优化当前的集群负载，而且没有太多的要求（如一个简单的 blob 存储用于状态备份即可）。</p>
 <h2 id="开始使用"><a href="#开始使用" class="headerlink" title="开始使用"></a>开始使用</h2><p>通过以下步骤你可以在本地的 Flink 1.13.0 版本中体验一下响应模式：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># These instructions assume you are in the root directory of a Flink distribution.</span><br><span class="line"></span><br><span class="line"># Put Job into usrlib/ directory</span><br><span class="line"></span><br><span class="line">mkdir usrlib</span><br><span class="line"></span><br><span class="line">cp ./examples/streaming/TopSpeedWindowing.jar usrlib/</span><br><span class="line"></span><br><span class="line"># Submit Job in Reactive Mode</span><br><span class="line"></span><br><span class="line">./bin/standalone-job.sh start -Dscheduler-mode=reactive -Dexecution.checkpointing.interval=&quot;10s&quot; -j org.apache.flink.streaming.examples.windowing.TopSpeedWindowing</span><br><span class="line"></span><br><span class="line"># Start first TaskManager</span><br><span class="line"></span><br><span class="line">./bin/taskmanager.sh start</span><br></pre></td></tr></table></figure>
+<pre><code class="hljs bash"><span class="hljs-comment"># These instructions assume you are in the root directory of a Flink distribution.</span>
+<span class="hljs-comment"># Put Job into usrlib/ directory</span>
+mkdir usrlib
+cp ./examples/streaming/TopSpeedWindowing.jar usrlib/
+
+<span class="hljs-comment"># Submit Job in Reactive Mode</span>
+./bin/standalone-job.sh start -Dscheduler-mode=reactive -Dexecution.checkpointing.interval=<span class="hljs-string">&quot;10s&quot;</span> -j org.apache.flink.streaming.examples.windowing.TopSpeedWindowing
+
+<span class="hljs-comment"># Start first TaskManager</span>
+./bin/taskmanager.sh start</code></pre>
 
 <p>你已经开启了一个基于响应式模式的 Flink 任务。你可以通过 <a target="_blank" rel="noopener" href="http://localhost:8081/">Flink Web UI</a> 查看到刚刚启动的一个 TaskManager。如果想要扩容只需要简单的添加另外一个 TaskManager 即可：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># Start additional TaskManager</span><br><span class="line"></span><br><span class="line">./bin/taskmanager.sh start</span><br><span class="line"></span><br><span class="line">To scale down, remove a TaskManager instance:</span><br><span class="line"></span><br><span class="line"># Remove a TaskManager</span><br><span class="line"></span><br><span class="line">./bin/taskmanager.sh stop</span><br></pre></td></tr></table></figure>
+<pre><code class="hljs bash"><span class="hljs-comment"># Start additional TaskManager</span>
+./bin/taskmanager.sh start</code></pre>
+
+<p>如果想缩容，停止一个 TaskManager 实例即可：</p>
+<pre><code class="hljs bash"><span class="hljs-comment"># Remove a TaskManager</span>
+./bin/taskmanager.sh stop</code></pre>
 
 <p>基于 <a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-master/docs/deployment/resource-providers/standalone/docker/">Docker</a> 或 <a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-master/docs/deployment/resource-providers/standalone/kubernetes/">standalone Kubernetes</a> 部署的 Flink 集群都可以在响应模式下部署任务（以上都需要基于 application 部署模式）</p>
 <h2 id="基于-Kubernetes-的示例"><a href="#基于-Kubernetes-的示例" class="headerlink" title="基于 Kubernetes 的示例"></a>基于 Kubernetes 的示例</h2><p>此章节，我们会演示一个真实场景中基于响应模式部署的示例。你可以将本示例作为自己部署自动扩容式集群的起点或模板。</p>
@@ -112,7 +128,7 @@
 </li>
 </ul>
 <h3 id="经验总结：将心跳超时配置降低能够让缩容更平顺"><a href="#经验总结：将心跳超时配置降低能够让缩容更平顺" class="headerlink" title="经验总结：将心跳超时配置降低能够让缩容更平顺"></a>经验总结：将心跳超时配置降低能够让缩容更平顺</h3><p>在我们刚刚开启实验时，我们从图标中注意到一些 Flink 反常的表现：</p>
-<p><img src="/img/highlight.png" alt="响应模式未能很好的缩容"></p>
+<p><img src="/img/high-timeout.png" alt="响应模式未能很好的缩容"></p>
 <p>上面所有图中，我们可以看到会有毛刺出现：消费延迟曲线会突然增大到 600k（是平时 75k 正常峰值的 8 倍）。在“TaskManager 数量”监控看板中我们发现 TaskManager 数量某些情况下并没有很好的追随吞吐量曲线的变化。导致我们浪费了大量配置的 TaskManager 资源。</p>
 <p>我们还发现这种情况只有在负载降低时才会发生，但是响应模式也是支持缩容场景的。那到底是什么原因导致毛刺出现以及 TaskManager 缩容不及时的呢？</p>
 <p>在 Flink 中，JobManager 会定期发送心跳信息给 TaskManager 来确定 TaskManager 是否还存活。默认心跳的发送频率是 50s 一次。这个默认值看上去像是很高，但是在高负载情况下可能出现网络波动、gc 停滞或其他情况导致心跳数据发送延迟。我们不希望将短暂的中断判断成 TaskManager 彻底失联。</p>
@@ -140,23 +156,6 @@
 
         
         
-  <div class="addthis addthis_toolbox addthis_default_style">
-    
-      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
-    
-    
-      <a class="addthis_button_tweet"></a>
-    
-    
-      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
-    
-    
-      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
-    
-    <a class="addthis_counter addthis_pill_style"></a>
-  </div>
-  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
-
       
       <div class="clearfix"></div>
       </footer>
@@ -219,6 +218,14 @@
   <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 
+
+
+<!-- Highlight.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/googlecode.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
 
 </body>
 </html>

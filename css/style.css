@@ -330,18 +330,12 @@ article .entry code {
   border-radius: 3px;
 }
 article .entry pre {
-  background: #eee;
-  border: 1px solid #ddd;
   margin-top: 15px;
   overflow: auto;
   padding: 7px 15px;
-  border-radius: 2px;
 }
 article .entry pre code {
   background: none;
-  padding: 0;
-  margin: 0;
-  border: none;
   border-radius: 0;
 }
 article .entry ul,

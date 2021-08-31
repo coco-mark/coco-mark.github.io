@@ -38,6 +38,8 @@
       
       <li><a href="/archives">Archives</a></li>
       
+      <li><a href="/atom.xml">RSS</a></li>
+      
     </ul>
     <div class="clearfix"></div>
   </nav>
@@ -78,12 +80,17 @@
 <p>大状态场景下，增量 checkpointing 给性能带来了巨大的提升。之前生产环境的测试结果中，TB 级别的状态在增量 checkpointing 使用前后 checkpoint 时间从原来的 3mins 下降到 30s。这得益于 checkpoint 不再需要将全部的状态上传到持久化的存储中。</p>
 <h1 id="开始使用"><a href="#开始使用" class="headerlink" title="开始使用"></a>开始使用</h1><p>当前 Flink 仅支持在 RocksDB 状态后端中使用增量 checkpointing，Flink 借助了 RocksDB 内部备份机制来定期对 checkpoint 进行整理。正因如此，增量 checkpoint 的历史记录不会无限制的增长下去，Flink 会自动的消耗和修剪旧的 checkpoints。</p>
 <p>关于增量 checkpointing 的开启，<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.4/ops/state/large_state_tuning.html#tuning-rocksdb">Apache Flink 的 checkpointing 官方文档</a>中有更详细的介绍。简单来说，你需要正常开启 checkpointing，并在创建 RocksDB 状态后端实例时将构造器的第二个参数设置为<code>true</code>。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line"></span><br><span class="line">env.setStateBackend(newRocksDBStateBackend(filebackend, <span class="keyword">true</span>));</span><br></pre></td></tr></table></figure>
+<pre><code class="hljs java">StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> env = <span class="type">StreamExecutionEnvironment</span>.getExecutionEnvironment()</span><br><span class="line"></span><br><span class="line">env.setStateBackend(newRocksDBStateBackend(filebackend, <span class="literal">true</span>))</span><br></pre></td></tr></table></figure>
+env.setStateBackend(newRocksDBStateBackend(filebackend, <span class="hljs-keyword">true</span>));</code></pre>
+
+<pre><code class="hljs scala"><span class="hljs-keyword">val</span> env = <span class="hljs-type">StreamExecutionEnvironment</span>.getExecutionEnvironment()
+
+env.setStateBackend(newRocksDBStateBackend(filebackend, <span class="hljs-literal">true</span>))</code></pre>
 
 <p>默认情况下，Flink 仅保留 1 个已完成的 checkpoint，如果需要保留更多，<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-master/docs/dev/datastream/fault-tolerance/checkpointing/">可以通过以下配置</a>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">state.checkpoints.num-retained</span><br></pre></td></tr></table></figure>
+<pre><code class="hljs plaintext">state.checkpoints.num-retained</code></pre>
+
 <h1 id="内部机制"><a href="#内部机制" class="headerlink" title="内部机制"></a>内部机制</h1><p>Flink 增量 checkpointing 是以 <a target="_blank" rel="noopener" href="https://github.com/facebook/rocksdb/wiki/Checkpoints">RocksDB checkpoints</a> 为基础实现的。RocksDB 底层基于“<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Log-structured_merge-tree">log-structured-merge（LMS）</a>”树形结构实现，它在内存中维护了一个被称作“memtable”的<strong>可变的内存缓冲区（changeable in-memory buffer）</strong>，key 相同的数据被更新时原 value 会被覆盖。当 memtable 写满时会将数据按照 key 顺序写入到磁盘中，写入过程中还会对数据进行轻量级的压缩。一旦数据写入到磁盘中，该数据将不可改变，此时的数据结构被称为<strong>“sorted-string-table（sstable）”</strong></p>
 <p>RocksDB 会启动一个后台任务来将重复的 key 进行整理、合并成新的 sstables，旧的 sstables 将被删除，合并后的 sstable 会包含之前所有数据。</p>
 <p>在此之上，Flink 会追踪自上次 checkpoint 之后哪些 sstables 被创建或被删除。得益于 sstables 的不可变性，Flink 得以掌握 state 的变化。在 checkpoint 触发时，Flink 会将所有的 memtables 数据强制写入磁盘中，并在本地临时目录中创建一个<strong>硬链接（hard-link）</strong>。这个过程会发生短暂的同步阻塞，而后 checkpoint 的其他制作阶段都是异步完成的，不再有阻塞发生。</p>
@@ -127,23 +134,6 @@
 
         
         
-  <div class="addthis addthis_toolbox addthis_default_style">
-    
-      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
-    
-    
-      <a class="addthis_button_tweet"></a>
-    
-    
-      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
-    
-    
-      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
-    
-    <a class="addthis_counter addthis_pill_style"></a>
-  </div>
-  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
-
       
       <div class="clearfix"></div>
       </footer>
@@ -206,6 +196,14 @@
   <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 
+
+
+<!-- Highlight.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/googlecode.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
 
 </body>
 </html>

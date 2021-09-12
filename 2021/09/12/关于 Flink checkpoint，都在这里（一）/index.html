@@ -1,0 +1,191 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>关于 Flink checkpoint，都在这里（一） › Coco&#39;s Mark</title>
+  <meta name="author" content="coco">
+  
+  <meta name="description" content="Flink checkpoint 一直以来都是 Flink 引以为豪的机制之一，它为 Flink 状态流处理保驾护航。但是一直以来笔者都对于 checkpoint 的理解仅限于 Flink 官网和一些博客中的介绍，在实践层面一直是开箱即用的阶段，没有进行过深入的了解和研究。但是作为 Flink 的重要机制之一，无论从一个 Flink 粉的角度，还是从问题定位与优化的角度，都应该对它有更深入、更全面的了解。本篇文章中以问题驱动的方式进行讨论。同时也欢迎在评论区留言，评论区的一些问题会收录到本系列的博客中。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="关于 Flink checkpoint，都在这里（一）"/>
+  <meta property="og:site_name" content="Coco&#39;s Mark"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Coco&#39;s Mark" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+  <header id="header"><div class="meta inner">
+  <h1><a href="/">Coco&#39;s Mark</a></h1>
+  <h2><a href="/">持续专注于实时技术领域</a></h2>
+  <nav id="main-nav">
+    <ul>
+      
+      <li><a href="/about">About</a></li>
+      
+      <li><a href="/archives">Archives</a></li>
+      
+      <li><a href="/atom.xml">RSS</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+</div>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header>
+      
+  
+    <h1 class="title">关于 Flink checkpoint，都在这里（一）</h1>
+  
+
+      
+        <time datetime="2021-09-11T16:00:00.000Z">2021-09-12</time>
+        <span>coco</span>
+      
+    </header>
+    <div class="entry">
+      
+        <p>Flink checkpoint 一直以来都是 Flink 引以为豪的机制之一，它为 Flink 状态流处理保驾护航。但是一直以来笔者都对于 checkpoint 的理解仅限于 Flink 官网和一些博客中的介绍，在实践层面一直是开箱即用的阶段，没有进行过深入的了解和研究。但是作为 Flink 的重要机制之一，无论从一个 Flink 粉的角度，还是从问题定位与优化的角度，都应该对它有更深入、更全面的了解。本篇文章中以<strong>问题驱动</strong>的方式进行讨论。同时也欢迎在评论区留言，评论区的一些问题会收录到本系列的博客中。</p>
+<span id="more"></span>
+
+<h2 id="1：什么是-checkpoint？"><a href="#1：什么是-checkpoint？" class="headerlink" title="# 1：什么是 checkpoint？"></a># 1：什么是 checkpoint？</h2><p>我们常常这样描述：“Flink 在执行 checkpoint 过程中…”。通过语境我们可以了解到 checkpoint 是 Flink Job 的一个动作（或者说 Flink 的一种机制）用来把各个算子的<strong>状态（state）</strong>存储到<strong>状态后端（state-backend）</strong>中。Flink 会周期性的执行 checkpoint 以保证状态后端中的状态保持最新。</p>
+<p>当 Flink job 出现异常时（如，网络问题导致其中一个 TaskManager 失联），Flink 基于 checkpoint 生成的状态快照进行状态恢复，从而保证数据结果的一致性。我们称这个过程为<strong>容错（fault tolerance，即 job 出现异常后能够自动恢复）</strong>。</p>
+<p><img src="/img/checkpoint.jpeg" alt="checkpoint"></p>
+<p>举个例子，假设我们  1）有一个 Kafka topic 有事件序列 <code>e = [1, 2, 3, 4, 5, 6, 7]</code>，Flink source 消费该 topic，然后发送给下游的 keyBy 算子。2）keyBy 算子通过 <code>e % 2</code> 生成 key 并发送到下游。3）下游 reduce 算子计算 <code>sum</code>，并将结果发送给 sink ，4）然后在控制台输出。</p>
+<p>这个示例中 source、reduce 都包含了状态：source 中包含了 <code>ListState</code> 来存储当前消费 Kafka topic 的 offset，reduce 算子中包含了 <code>ValueState</code> 存储当前 sum 的计算结果。我们当然可以通过 <code>List&lt;Long&gt;</code> 来保存 Kafka topic offset，通过  <code>long</code> 保存 sum 的计算结果。那么  Flink 就无法感知到算子中是否有状态需要持久化到状态后端，异常时也无法进行状态的恢复。</p>
+<p>我们假设 offset=5 时任务出现了异常，reduce 中的状态将会丢失。job 恢复后将从 <code>e = 6</code> 开始消费，reduce 的 sum 结果将会因之前的状态丢失导致出现错误的结果。但是如果使用了状态与 checkpoint 机制，则可以恢复之前的计算结果，从而保证恢复后的结果数据的准确性。</p>
+<p>总的来说，checkpoint 是 Flink 容错机制，基于 Flink State 一起可以帮助用户在 job 异常时进行状态恢复。那么其他的分布式计算框架（如，Spark）是如何进行容错的呢？<a href="/2021/09/13/%E5%85%B3%E4%BA%8E%20Flink%20checkpoint%EF%BC%8C%E9%83%BD%E5%9C%A8%E8%BF%99%E9%87%8C%EF%BC%88%E4%BA%8C%EF%BC%89/" title="下一篇对了比 Spark Stream、Storm、Flink 容错机制">下一篇对了比 Spark Stream、Storm、Flink 容错机制</a>。</p>
+<p><em>以上示例可以从 <a target="_blank" rel="noopener" href="https://github.com/coco-mark/flink-examples">github</a> 中下载代码进行测试。</em></p>
+<p><em>笔者：<a href="https://coco-mark.github.io/">可可</a> @ <a href="mailto:cherry.picker2018@icloud.com.">欢迎邮件联系我</a></em></p>
+
+      
+    </div>
+      
+      <footer>
+        
+  
+  <div class="categories">
+    <a href="/categories/Flink/">Flink</a>
+    
+      <span id="busuanzi_container_page_pv" class="alignright">views: <span id="busuanzi_value_page_pv"></span></span>
+    
+  </div>
+
+        
+        
+      
+      <div class="clearfix"></div>
+      </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  
+</section>
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:coco-mark.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2021/09/13/关于 Flink checkpoint，都在这里（二）/">关于 Flink checkpoint，都在这里（二）</a>
+      </li>
+    
+      <li>
+        <a href="/2021/09/12/关于 Flink checkpoint，都在这里（一）/">关于 Flink checkpoint，都在这里（一）</a>
+      </li>
+    
+      <li>
+        <a href="/2021/09/05/深入理解 Apache Flink 可扩展状态/">深入理解 Apache Flink 可扩展状态</a>
+      </li>
+    
+      <li>
+        <a href="/2021/08/28/Apache Flink：基于 Reactive Mode 的 Flink 自动扩容/">Apache Flink：基于 Reactive Mode 的 Flink 自动扩容</a>
+      </li>
+    
+      <li>
+        <a href="/2021/08/21/Apache Flink 大状态管理：增量 checkpointing 介绍/">Apache Flink 大状态管理：增量 checkpointing 介绍</a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Flink/">Flink</a><small>5</small></li>
+  
+  </ul>
+</div>
+
+
+  
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2021 coco
+  
+    <!-- 不蒜子统计 -->
+    <span id="busuanzi_container_site_pv">| views: <span id="busuanzi_value_site_pv"></span>,</span>
+    <span id="busuanzi_container_site_uv"> visitors: <span id="busuanzi_value_site_uv"></span></span>
+  
+  
+</div>
+<div class="alignleft">
+ 
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/jquery/jquery.min.js"></script>
+
+
+
+
+<!-- Highlight.js -->
+<link rel="stylesheet" href="/highlight/styles/googlecode.min.css">
+<script src="/highlight/highlight.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+
+
+    <!-- 不蒜子统计 -->
+    <script async src="/busuanzi/busuanzi.pure.mini.js"></script>
+  
+</body>
+</html>
+

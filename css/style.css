@@ -41,7 +41,7 @@ a {
   color: #258fb8;
 }
 a:hover {
-  text-decoration: none;
+  text-decoration: underline;
 }
 .alignleft {
   float: left;
@@ -146,6 +146,10 @@ article {
   background: #fff;
   -webkit-box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.24);
   box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.24);
+  font-family: Roboto, Noto Sans, Noto Sans JP, Noto Sans KR, Noto Naskh Arabic, Noto Sans Thai, Noto Sans Hebrew, Noto Sans Bengali, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  color: #202124;
 }
 @media screen and (max-width: 900px) {
   article {
@@ -166,7 +170,7 @@ article.page .title a:after {
   vertical-align: super;
 }
 article .post-content {
-  padding: 25px 20px 25px 20px;
+  padding: 40px;
   margin-bottom: 24px;
   position: relative;
 }
@@ -287,6 +291,7 @@ article header .title a:hover {
 article .entry {
   text-align: justify;
   line-height: 1.6;
+  margin-top: 25px;
 }
 article .entry p,
 article .entry blockquote,
@@ -301,6 +306,14 @@ article .entry h5,
 article .entry h6,
 article .entry .video-container {
   margin-top: 15px;
+}
+article .entry table {
+  border-collapse: collapse;
+}
+article .entry table td,
+article .entry th {
+  border: 1px solid #777;
+  padding: 4px;
 }
 article .entry blockquote {
   border-top: 1px solid #ddd;
@@ -363,7 +376,7 @@ article .entry dl dl {
 }
 article .entry h1,
 article .entry h2 {
-  font-weight: normal;
+  font-weight: 500;
   border-bottom: 1px solid #ddd;
   padding-bottom: 10px;
   margin-top: 20px;
@@ -372,7 +385,7 @@ article .entry h3,
 article .entry h4,
 article .entry h5,
 article .entry h6 {
-  font-weight: normal;
+  font-weight: 500;
 }
 article .entry img,
 article .entry video {

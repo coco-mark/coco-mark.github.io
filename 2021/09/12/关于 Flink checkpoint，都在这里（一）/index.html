@@ -73,7 +73,7 @@
 <p>我们假设 offset=5 时任务出现了异常，reduce 中的状态将会丢失。job 恢复后将从 <code>e = 6</code> 开始消费，reduce 的 sum 结果将会因之前的状态丢失导致出现错误的结果。但是如果使用了状态与 checkpoint 机制，则可以恢复之前的计算结果，从而保证恢复后的结果数据的准确性。</p>
 <p>总的来说，checkpoint 是 Flink 容错机制，基于 Flink State 一起可以帮助用户在 job 异常时进行状态恢复。那么其他的分布式计算框架（如，Spark）是如何进行容错的呢？<a href="/2021/09/25/%E5%85%B3%E4%BA%8E%20Flink%20checkpoint%EF%BC%8C%E9%83%BD%E5%9C%A8%E8%BF%99%E9%87%8C%EF%BC%88%E4%BA%8C%EF%BC%89/" title="下一篇对了比 Spark Stream、Storm、Flink 容错机制">下一篇对了比 Spark Stream、Storm、Flink 容错机制</a>。</p>
 <p><em>以上示例可以从 <a target="_blank" rel="noopener" href="https://github.com/coco-mark/flink-examples">github</a> 中下载代码进行测试。</em></p>
-<p><em>笔者：<a href="https://coco-mark.github.io/">可可</a> @ <a href="mailto:cherry.picker2018@icloud.com.">欢迎邮件联系我</a></em></p>
+<p><em><a href="https://coco-mark.github.io/">可可</a> @ <a href="mailto:cherry.picker2018@icloud.com.">欢迎邮件联系我</a></em></p>
 
       
     </div>
